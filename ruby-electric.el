@@ -54,8 +54,8 @@
   "Minor mode providing electric editing commands for ruby files"
   :group 'ruby)
 
-(defconst ruby-electric-expandable-bar
-  "\\s-\\(do\\|{\\)\\s-+|")
+(defconst ruby-electric-expandable-bar-re
+  "\\s-\\(do\\|{\\)\\s-*|")
 
 (defvar ruby-electric-matching-delimeter-alist
   '((?\[ . ?\])
@@ -347,7 +347,7 @@ enabled."
   (ruby-electric-insert
    arg
    (and (ruby-electric-code-at-point-p)
-        (save-excursion (re-search-backward ruby-electric-expandable-bar nil t))
+        (save-excursion (re-search-backward ruby-electric-expandable-bar-re nil t))
         (= (point) (match-end 0)) ;; looking-back is missing on XEmacs
         (save-excursion
           (insert "|")))))
