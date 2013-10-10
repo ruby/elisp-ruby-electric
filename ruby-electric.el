@@ -187,10 +187,6 @@ enabled."
   (or (memq 'all ruby-electric-expand-delimiters-list)
       (memq char ruby-electric-expand-delimiters-list)))
 
-(defun ruby-electric-is-last-command-char-expandable-punct-p()
-  (or (memq 'all ruby-electric-expand-delimiters-list)
-      (memq last-command-event ruby-electric-expand-delimiters-list)))
-
 (defun ruby-electric-space-can-be-expanded-p()
   (if (ruby-electric-code-at-point-p)
       (cond ((and ruby-electric-expandable-do-re
@@ -234,7 +230,7 @@ enabled."
   `(cond ((ruby-electric-cua-replace-region-maybe))
          ((and
            (null ,arg)
-           (ruby-electric-is-last-command-char-expandable-punct-p))
+           (ruby-electric-command-char-expandable-punct-p last-command-event))
           (insert last-command-event)
           ,@body)
          (t
