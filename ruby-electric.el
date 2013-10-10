@@ -115,7 +115,7 @@ instead."
 (defvar ruby-electric-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map " " 'ruby-electric-space)
-    (define-key map (kbd "DEL") 'ruby-electric-delete-backward-char)
+    (define-key map [remap delete-backward-char] 'ruby-electric-delete-backward-char)
     (dolist (x ruby-electric-delimiters-alist)
       (let* ((delim   (car x))
              (plist   (cdr x))
