@@ -57,12 +57,25 @@
 (defconst ruby-electric-expandable-bar-re
   "\\s-\\(do\\|{\\)\\s-*|")
 
+(defconst ruby-electric-delimiters-alist
+  '((?\{ :name "Curly brace"  :handler ruby-electric-curlies       :closing ?\})
+    (?\[ :name "Square brace" :handler ruby-electric-matching-char :closing ?\])
+    (?\( :name "Round brace"  :handler ruby-electric-matching-char :closing ?\))
+    (?\' :name "Quote"        :handler ruby-electric-matching-char)
+    (?\" :name "Double quote" :handler ruby-electric-matching-char)
+    (?\` :name "Back quote"   :handler ruby-electric-matching-char)
+    (?\| :name "Vertical bar" :handler ruby-electric-bar)
+    (?\# :name "Hash"         :handler ruby-electric-hash)))
+
 (defvar ruby-electric-matching-delimeter-alist
-  '((?\[ . ?\])
-    (?\( . ?\))
-    (?\' . ?\')
-    (?\` . ?\`)
-    (?\" . ?\")))
+  (apply 'nconc
+         (mapcar #'(lambda (x)
+                     (let ((delim (car x))
+                           (plist (cdr x)))
+                       (if (eq (plist-get plist :handler) 'ruby-electric-matching-char)
+                           (list (cons delim (or (plist-get plist :closing)
+                                                 delim))))))
+                 ruby-electric-delimiters-alist)))
 
 (defvar ruby-electric-expandable-do-re)
 
@@ -102,34 +115,29 @@ instead."
 (defvar ruby-electric-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map " " 'ruby-electric-space)
-    (define-key map "{" 'ruby-electric-curlies)
-    (define-key map "(" 'ruby-electric-matching-char)
-    (define-key map "[" 'ruby-electric-matching-char)
-    (define-key map "\"" 'ruby-electric-matching-char)
-    (define-key map "\'" 'ruby-electric-matching-char)
-    (define-key map "`" 'ruby-electric-matching-char)
-    (define-key map "}" 'ruby-electric-closing-char)
-    (define-key map ")" 'ruby-electric-closing-char)
-    (define-key map "]" 'ruby-electric-closing-char)
-    (define-key map "|" 'ruby-electric-bar)
-    (define-key map "#" 'ruby-electric-hash)
     (define-key map (kbd "DEL") 'ruby-electric-delete-backward-char)
+    (dolist (x ruby-electric-delimiters-alist)
+      (let* ((delim   (car x))
+             (plist   (cdr x))
+             (name    (plist-get plist :name))
+             (func    (plist-get plist :handler))
+             (closing (plist-get plist :closing)))
+        (define-key map (char-to-string delim) func)
+        (if closing
+            (define-key map (char-to-string closing) 'ruby-electric-closing-char))))
     map)
   "Keymap used in ruby-electric-mode")
 
 (defcustom ruby-electric-expand-delimiters-list '(all)
   "*List of contexts where matching delimiter should be
 inserted. The word 'all' will do all insertions."
-  :type '(set :extra-offset 8
-              (const :tag "Everything" all )
-              (const :tag "Curly brace" ?\{ )
-              (const :tag "Square brace" ?\[ )
-              (const :tag "Round brace" ?\( )
-              (const :tag "Quote" ?\' )
-              (const :tag "Double quote" ?\" )
-              (const :tag "Back quote" ?\` )
-              (const :tag "Vertical bar" ?\| )
-              (const :tag "Hash" ?\# ))
+  :type `(set :extra-offset 8
+              (const :tag "Everything" all)
+              ,@(apply 'list
+                       (mapcar #'(lambda (x)
+                                   `(const :tag ,(plist-get (cdr x) :name)
+                                           ,(car x)))
+                               ruby-electric-delimiters-alist)))
   :group 'ruby-electric)
 
 (defcustom ruby-electric-newline-before-closing-bracket nil
