@@ -353,11 +353,11 @@ enabled."
   (interactive "P")
   (ruby-electric-insert
    arg
-   (and (ruby-electric-code-at-point-p)
-        (save-excursion (re-search-backward ruby-electric-expandable-bar-re nil t))
-        (= (point) (match-end 0)) ;; looking-back is missing on XEmacs
-        (save-excursion
-          (insert "|")))))
+   (cond ((and (ruby-electric-code-at-point-p)
+               (looking-back ruby-electric-expandable-bar-re))
+          (save-excursion (insert "|")))
+         (t
+          (setq this-command 'self-insert-command)))))
 
 (defun ruby-electric-delete-backward-char(arg)
   (interactive "P")
