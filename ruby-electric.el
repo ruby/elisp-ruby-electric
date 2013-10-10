@@ -137,6 +137,9 @@ inserted. The word 'all' will do all insertions."
 closing bracket or not."
   :type 'boolean :group 'ruby-electric)
 
+(defvar ruby-electric-mode-hook nil
+  "Called after `ruby-electric-mode' is turned on.")
+
 ;;;###autoload
 (define-minor-mode ruby-electric-mode
   "Toggle Ruby Electric minor mode.
@@ -156,7 +159,9 @@ enabled."
   ;;indicator for the mode line.
   " REl"
   ;;keymap
-  ruby-electric-mode-map)
+  ruby-electric-mode-map
+  (if ruby-electric-mode
+      (run-hooks 'ruby-electric-mode-hook)))
 
 (defun ruby-electric-space (arg)
   (interactive "P")
