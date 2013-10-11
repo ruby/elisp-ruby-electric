@@ -327,7 +327,7 @@ enabled."
           (insert (make-string (prefix-numeric-value ,arg) last-command-event)))))
 
 (defun ruby-electric-curlies(arg)
-  (interactive "P")
+  (interactive "*P")
   (ruby-electric-insert
    arg
    (cond
@@ -366,7 +366,7 @@ enabled."
          (insert "}"))))))))
 
 (defun ruby-electric-hash(arg)
-  (interactive "P")
+  (interactive "*P")
   (ruby-electric-insert
    arg
    (and (ruby-electric-string-at-point-p)
@@ -390,7 +390,7 @@ enabled."
      ,@body))
 
 (defun ruby-electric-matching-char(arg)
-  (interactive "P")
+  (interactive "*P")
   (ruby-electric-insert
    arg
    (let ((closing (cdr (assoc last-command-event
@@ -410,7 +410,7 @@ enabled."
        (save-excursion (insert closing)))))))
 
 (defun ruby-electric-closing-char(arg)
-  (interactive "P")
+  (interactive "*P")
   (cond
    ((ruby-electric-cua-replace-region-maybe))
    (arg
@@ -432,7 +432,7 @@ enabled."
     (self-insert-command 1))))
 
 (defun ruby-electric-bar(arg)
-  (interactive "P")
+  (interactive "*P")
   (ruby-electric-insert
    arg
    (cond ((and (ruby-electric-code-at-point-p)
