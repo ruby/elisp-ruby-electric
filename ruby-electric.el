@@ -10,7 +10,7 @@
 ;; URL: https://github.com/knu/ruby-electric.el
 ;; Keywords: languages ruby
 ;; License: The same license terms as Ruby
-;; Version: 2.0
+;; Version: 2.0.1
 
 ;;; Commentary:
 ;;
