@@ -77,45 +77,117 @@
                                                  delim))))))
                  ruby-electric-delimiters-alist)))
 
-(defvar ruby-electric-expandable-do-re)
-
 (defvar ruby-electric-expandable-keyword-re)
 
-(defcustom ruby-electric-keywords
-  '("begin"
-    "case"
-    "class"
-    "def"
-    "do"
-    "for"
-    "if"
-    "module"
-    "unless"
-    "until"
-    "while")
-  "List of keywords for which closing 'end' is to be inserted
-after typing a space."
-  :type '(repeat string)
+(defmacro ruby-electric--try-insert-and-do (string &rest body)
+  (declare (indent 1))
+  `(let ((before (point))
+         (after (progn
+                  (insert ,string)
+                  (point))))
+     (unwind-protect
+         (progn ,@body)
+       (delete-region before after)
+       (goto-char before))))
+
+(defconst ruby-modifier-beg-symbol-re
+  (regexp-opt ruby-modifier-beg-keywords 'symbols))
+
+(defun ruby-electric--modifier-keyword-at-point-p ()
+  "Test if there is a modifier keyword at point."
+  (and (looking-at ruby-modifier-beg-symbol-re)
+       (not (looking-back "\\."))
+       (save-excursion
+         (let ((indent1 (ruby-electric--try-insert-and-do "\n"
+                          (ruby-calculate-indent)))
+               (indent2 (save-excursion
+                          (ruby-forward-sexp 1)
+                          (ruby-electric--try-insert-and-do " x\n"
+                            (ruby-calculate-indent)))))
+           (= indent1 indent2)))))
+
+(defconst ruby-block-mid-symbol-re
+  (regexp-opt ruby-block-mid-keywords 'symbols))
+
+(defun ruby-electric--block-mid-keyword-at-point-p ()
+  "Test if there is a block mid keyword at point."
+  (and (looking-at ruby-block-mid-symbol-re)
+       (looking-back "^\\s-*")))
+
+(defconst ruby-block-beg-symbol-re
+  (regexp-opt ruby-block-beg-keywords 'symbols))
+
+(defun ruby-electric--block-beg-keyword-at-point-p ()
+  "Test if there is a block beginning keyword at point."
+  (and (looking-at ruby-block-beg-symbol-re)
+       (if (string= (match-string 1) "do")
+           (looking-back "\\s-")
+         (not (looking-back "[^.]")))
+       ;; (not (ruby-electric--modifier-keyword-at-point-p)) ;; implicit assumption
+       ))
+
+(defcustom ruby-electric-keywords-alist
+  '(("begin" . end)
+    ("case" . end)
+    ("class" . end)
+    ("def" . end)
+    ("do" . end)
+    ("else" . reindent)
+    ("elsif" . reindent)
+    ("end" . reindent)
+    ("ensure" . reindent)
+    ("for" . end)
+    ("if" . end)
+    ("module" . end)
+    ("rescue" . reindent)
+    ("unless" . end)
+    ("until" . end)
+    ("when" . reindent)
+    ("while" . end))
+  "Alist of keywords and actions to define how to react to space
+or return right after each keyword.  In each (KEYWORD . ACTION)
+cons, ACTION can be set to one of the following values:
+
+    `reindent'  Reindent the line.
+
+    `end'       Reindent the line and auto-close the keyword with
+                end if applicable.
+
+    `nil'       Do nothing.
+"
+  :type '(repeat (cons (string :tag "Keyword")
+                       (choice :tag "Action"
+                               :menu-tag "Action"
+                               (const :tag "Auto-close with end"
+                                      :value end)
+                               (const :tag "Auto-reindent"
+                                      :value reindent)
+                               (const :tag "None"
+                                      :value nil))))
   :set (lambda (sym val)
          (set sym val)
-         (setq ruby-electric-expandable-do-re
-               (and (member "do" val)
-                    "\\S-\\s-+\\(do\\)\\s-?$")
-               ruby-electric-expandable-keyword-re
-               (concat "^\\s-*"
-                       (regexp-opt (remove "do" val) t)
-                       "\\s-?$")))
+         (let (keywords)
+           (dolist (x val)
+             (let ((keyword (car x))
+                   (action (cdr x)))
+               (if action
+                   (setq keywords (cons keyword keywords)))))
+           (setq ruby-electric-expandable-keyword-re
+                 (concat (regexp-opt keywords 'symbols)
+                         "\\s-*$"))))
   :group 'ruby-electric)
 
 (defcustom ruby-electric-simple-keywords-re nil
-  "Obsolete and ignored.  Customize `ruby-electric-keywords'
+  "Obsolete and ignored.  Customize `ruby-electric-keywords-alist'
 instead."
   :type 'regexp :group 'ruby-electric)
 
 (defvar ruby-electric-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map " " 'ruby-electric-space)
+    (define-key map " " 'ruby-electric-space/return)
     (define-key map [remap delete-backward-char] 'ruby-electric-delete-backward-char)
+    (define-key map [remap newline] 'ruby-electric-space/return)
+    (define-key map [remap newline-and-indent] 'ruby-electric-space/return)
     (dolist (x ruby-electric-delimiters-alist)
       (let* ((delim   (car x))
              (plist   (cdr x))
@@ -171,14 +243,43 @@ enabled."
   (if ruby-electric-mode
       (run-hooks 'ruby-electric-mode-hook)))
 
-(defun ruby-electric-space (arg)
-  (interactive "P")
-  (insert (make-string (prefix-numeric-value arg) last-command-event))
-  (if (ruby-electric-space-can-be-expanded-p)
-      (save-excursion
-        (ruby-indent-line t)
-        (newline)
-        (ruby-insert-end))))
+(defun ruby-electric-space/return (arg)
+  (interactive "*P")
+  (and (boundp 'sp-last-operation)
+       (setq sp-delayed-pair nil))
+  (cond (arg
+         (insert (make-string (prefix-numeric-value arg) last-command-event)))
+        ((ruby-electric-space-can-be-expanded-p)
+         (let (action)
+           (save-excursion
+             (goto-char (match-beginning 0))
+             (let* ((keyword (match-string 1))
+                    (allowed-actions
+                     (cond ((ruby-electric--modifier-keyword-at-point-p)
+                            '(reindent)) ;; no end necessary
+                           ((ruby-electric--block-mid-keyword-at-point-p)
+                            '(reindent)) ;; ditto
+                           ((ruby-electric--block-beg-keyword-at-point-p)
+                            '(end reindent)))))
+               (if allowed-actions
+                   (setq action
+                         (let ((action (cdr (assoc keyword ruby-electric-keywords-alist))))
+                           (and (memq action allowed-actions)
+                                action))))))
+           (cond ((eq action 'end)
+                  (ruby-indent-line)
+                  (save-excursion
+                    (newline)
+                    (ruby-insert-end)))
+                 ((eq action 'reindent)
+                  (ruby-indent-line)))
+           (if (char-equal last-command-event ?\s)
+               (insert " ")
+             (funcall this-original-command))))
+        (t
+         (if (char-equal last-command-event ?\s)
+             (insert " ")
+           (funcall (setq this-command this-original-command))))))
 
 (defun ruby-electric-code-at-point-p()
   (and ruby-electric-mode
@@ -203,28 +304,8 @@ enabled."
       (memq char ruby-electric-expand-delimiters-list)))
 
 (defun ruby-electric-space-can-be-expanded-p()
-  (if (ruby-electric-code-at-point-p)
-      (cond ((and ruby-electric-expandable-do-re
-                  (looking-back ruby-electric-expandable-do-re))
-             (not (ruby-electric-space--sp-has-pair-p "do")))
-            ((looking-back ruby-electric-expandable-keyword-re)
-             (not (ruby-electric-space--sp-has-pair-p (match-string 1)))))))
-
-(defun ruby-electric-space--sp-has-pair-p(keyword)
-  (and (boundp 'smartparens-mode)
-       smartparens-mode
-       (let ((plist (sp-get-pair keyword)))
-         (and plist
-              ;; Check for :actions '(insert)
-              (memq 'insert (plist-get plist :actions))
-              ;; Check for :when '(("SPC" "RET" "<evil-ret>"))
-              (let ((x (plist-get plist :when)) when-space)
-                (while (and x
-                            (not (let ((it (car x)))
-                                   (setq when-space (and (listp it)
-                                                         (member "SPC" it))))))
-                  (setq x (cdr x)))
-                when-space)))))
+  (and (ruby-electric-code-at-point-p)
+       (looking-back ruby-electric-expandable-keyword-re)))
 
 (defun ruby-electric-cua-replace-region-maybe()
   (let ((func (key-binding [remap self-insert-command])))
