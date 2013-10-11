@@ -1,52 +1,35 @@
-;; -*-Emacs-Lisp-*-
+;;; ruby-electric.el --- Minor mode for electrically editing ruby code
 ;;
-;; ruby-electric.el --- electric editing commands for ruby files
-;;
-;; Copyright (C) 2005 by Dee Zsombor <dee dot zsombor at gmail dot com>.
-;; Released under same license terms as Ruby.
-;;
-;; Due credit: this work was inspired by a code snippet posted by
-;; Frederick Ros at http://rubygarden.org/ruby?EmacsExtensions.
-;;
-;; Following improvements where added:
-;;
-;;       - handling of strings of type 'here document'
-;;       - more keywords, with special handling for 'do'
-;;       - packaged into a minor mode
-;;
-;; Usage:
-;;
-;;    0) copy ruby-electric.el into directory where emacs can find it.
-;;
-;;    1) modify your startup file (.emacs or whatever) by adding
-;;       following line:
-;;
-;;            (require 'ruby-electric)
-;;
-;;       note that you need to have font lock enabled beforehand.
-;;
-;;    2) toggle Ruby Electric Mode on/off with ruby-electric-mode.
-;;
-;; Changelog:
-;;
-;;  2005/Jan/14: inserts matching pair delimiters like {, [, (, ', ",
-;;  ' and | .
-;;
-;;  2005/Jan/14: added basic Custom support for configuring keywords
-;;  with electric closing.
-;;
-;;  2005/Jan/18: more Custom support for configuring characters for
-;;  which matching expansion should occur.
-;;
-;;  2005/Jan/18: no longer uses 'looking-back' or regexp character
-;;  classes like [:space:] since they are not implemented on XEmacs.
-;;
-;;  2005/Feb/01: explicitly provide default argument of 1 to
-;;  'backward-word' as it requires it on Emacs 21.3
-;;
-;;  2005/Mar/06: now stored inside ruby CVS; customize pages now have
-;;  ruby as parent; cosmetic fixes.
+;; Authors: Dee Zsombor <dee dot zsombor at gmail dot com>
+;;          Yukihiro Matsumoto
+;;          Nobuyoshi Nakada
+;;          Akinori MUSHA <knu@iDaemons.org>
+;;          Jakub Kuźma <qoobaa@gmail.com>
+;; Maintainer: Akinori MUSHA <knu@iDaemons.org>
+;; Created: 6 Mar 2005
+;; URL: https://github.com/knu/ruby-electric.el
+;; Keywords: languages ruby
+;; License: The same license terms as Ruby
+;; Version: 1.1
 
+;;; Commentary:
+;;
+;; `ruby-electric-mode' accelerates code writing in ruby by making
+;; some keys "electric" and automatically supplying with closing
+;; parentheses and "end" as appropriate.
+;;
+;; This work was originally inspired by a code snippet posted by
+;; [Frederick Ros](https://github.com/sleeper).
+;;
+;; Add the following line to enable ruby-electric-mode under
+;; ruby-mode.
+;;
+;;     (eval-after-load "ruby-mode"
+;;       '(add-hook 'ruby-mode-hook 'ruby-electric-mode))
+;;
+;; Type M-x customize-group ruby-electric for configuration.
+
+;;; Code:
 
 (require 'ruby-mode)
 
@@ -464,3 +447,5 @@ enabled."
   (delete-char -1))
 
 (provide 'ruby-electric)
+
+;;; ruby-electric.el ends here
