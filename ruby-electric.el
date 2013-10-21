@@ -260,6 +260,9 @@ enabled."
            (if (char-equal last-command-event ?\s)
                (insert " ")
              (funcall this-original-command))))
+        ((and (eq this-original-command 'newline-and-indent)
+              (ruby-electric-comment-at-point-p))
+         (funcall (setq this-command 'comment-indent-new-line)))
         (t
          (if (char-equal last-command-event ?\s)
              (insert " ")
@@ -274,6 +277,10 @@ enabled."
 (defun ruby-electric-string-at-point-p()
   (and ruby-electric-mode
        (consp (memq 'font-lock-string-face (text-properties-at (point))))))
+
+(defun ruby-electric-comment-at-point-p()
+  (and ruby-electric-mode
+       (consp (memq 'font-lock-comment-face (text-properties-at (point))))))
 
 (defun ruby-electric-escaped-p()
   (let ((f nil))
