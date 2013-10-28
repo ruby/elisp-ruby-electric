@@ -227,6 +227,17 @@ enabled."
   (if ruby-electric-mode
       (run-hooks 'ruby-electric-mode-hook)))
 
+(defun ruby-electric-space/return-fallback ()
+  (if (or (eq this-original-command 'ruby-electric-space/return)
+          (null (ignore-errors
+                  ;; ac-complete may fail if there is nothing left to complete
+                  (call-interactively this-original-command)
+                  (setq this-command this-original-command))))
+      ;; fall back to a globally bound command
+      (let ((command (global-key-binding (char-to-string last-command-event) t)))
+        (and command
+             (call-interactively (setq this-command command))))))
+
 (defun ruby-electric-space/return (arg)
   (interactive "*P")
   (and (boundp 'sp-last-operation)
@@ -257,16 +268,12 @@ enabled."
                     (ruby-insert-end)))
                  ((eq action 'reindent)
                   (ruby-indent-line)))
-           (if (char-equal last-command-event ?\s)
-               (insert " ")
-             (funcall this-original-command))))
+           (ruby-electric-space/return-fallback)))
         ((and (eq this-original-command 'newline-and-indent)
               (ruby-electric-comment-at-point-p))
-         (funcall (setq this-command 'comment-indent-new-line)))
+         (call-interactively (setq this-command 'comment-indent-new-line)))
         (t
-         (if (char-equal last-command-event ?\s)
-             (insert " ")
-           (funcall (setq this-command this-original-command))))))
+         (ruby-electric-space/return-fallback))))
 
 (defun ruby-electric-code-at-point-p()
   (and ruby-electric-mode
