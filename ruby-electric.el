@@ -201,6 +201,11 @@ The word 'all' will do all insertions."
 automatically inserted closing bracket."
   :type 'boolean :group 'ruby-electric)
 
+(defcustom ruby-electric-autoindent-on-closing-char nil
+  "*Non-nil means the current line should be automatically
+indented when a closing character is manually typed in."
+  :type 'boolean :group 'ruby-electric)
+
 (defvar ruby-electric-mode-hook nil
   "Called after `ruby-electric-mode' is turned on.")
 
@@ -427,7 +432,9 @@ enabled."
     (forward-char))
    (t
     (setq this-command 'self-insert-command)
-    (self-insert-command 1))))
+    (self-insert-command 1)
+    (if ruby-electric-autoindent-on-closing-char
+        (ruby-indent-line)))))
 
 (defun ruby-electric-bar(arg)
   (interactive "*P")
