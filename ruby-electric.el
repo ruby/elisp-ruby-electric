@@ -185,8 +185,8 @@ instead."
   "Keymap used in ruby-electric-mode")
 
 (defcustom ruby-electric-expand-delimiters-list '(all)
-  "*List of contexts where matching delimiter should be
-inserted. The word 'all' will do all insertions."
+  "*List of contexts where matching delimiter should be inserted.
+The word 'all' will do all insertions."
   :type `(set :extra-offset 8
               (const :tag "Everything" all)
               ,@(apply 'list
@@ -197,8 +197,8 @@ inserted. The word 'all' will do all insertions."
   :group 'ruby-electric)
 
 (defcustom ruby-electric-newline-before-closing-bracket nil
-  "*Controls whether a newline should be inserted before the
-closing bracket or not."
+  "*Non-nil means a newline should be inserted before an
+automatically inserted closing bracket."
   :type 'boolean :group 'ruby-electric)
 
 (defvar ruby-electric-mode-hook nil
