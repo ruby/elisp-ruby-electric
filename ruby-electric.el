@@ -447,7 +447,7 @@ enabled."
           (setq this-command 'self-insert-command)))))
 
 (defun ruby-electric-delete-backward-char(arg)
-  (interactive "*P")
+  (interactive "*p")
   (cond ((memq last-command '(ruby-electric-matching-char
                               ruby-electric-bar))
          (delete-char 1))
@@ -466,7 +466,7 @@ enabled."
         ((eq last-command 'ruby-electric-hash)
          (and (char-equal (preceding-char) ?{)
               (delete-char 1))))
-  (delete-char -1))
+  (delete-char (- arg)))
 
 (provide 'ruby-electric)
 
