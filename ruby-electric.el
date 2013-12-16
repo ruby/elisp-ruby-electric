@@ -366,7 +366,9 @@ enabled."
         (t
          (insert "#")
          (forward-char 1)
-         (insert "}"))))))))
+         (insert "}")))))
+    (t
+     (setq this-command 'self-insert-command)))))
 
 (defun ruby-electric-hash(arg)
   (interactive "*P")
