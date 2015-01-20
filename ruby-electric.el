@@ -172,6 +172,7 @@ instead."
     (define-key map [remap delete-backward-char] 'ruby-electric-delete-backward-char)
     (define-key map [remap newline] 'ruby-electric-space/return)
     (define-key map [remap newline-and-indent] 'ruby-electric-space/return)
+    (define-key map [remap electric-newline-and-maybe-indent] 'ruby-electric-space/return)
     (dolist (x ruby-electric-delimiters-alist)
       (let* ((delim   (car x))
              (plist   (cdr x))
