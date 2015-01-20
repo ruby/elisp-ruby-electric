@@ -323,65 +323,112 @@ enabled."
          ((and
            (null ,arg)
            (ruby-electric-command-char-expandable-punct-p last-command-event))
-          (insert last-command-event)
-          ,@body)
+          (let ((region-beginning
+                 (cond ((region-active-p)
+                        (prog1
+                            (save-excursion
+                              (goto-char (region-beginning))
+                              (insert last-command-event)
+                              (point))
+                          (goto-char (region-end))))
+                       (t
+                        (insert last-command-event)
+                        nil))))
+            ,@body
+            (and region-beginning
+                 ;; If no extra character is inserted, go back to the
+                 ;; region beginning.
+                 (eq this-command 'self-insert-command)
+                 (goto-char region-beginning))))
          (t
           (setq this-command 'self-insert-command)
           (insert (make-string (prefix-numeric-value ,arg) last-command-event)))))
 
-(defun ruby-electric-curlies(arg)
+(defun ruby-electric-curlies (arg)
   (interactive "*P")
   (ruby-electric-insert
    arg
    (cond
     ((ruby-electric-code-at-point-p)
-     (insert "}")
-     (backward-char 1)
-     (redisplay)
+     (save-excursion
+       (insert "}")
+       (font-lock-fontify-region (line-beginning-position) (point)))
      (cond
       ((ruby-electric-string-at-point-p) ;; %w{}, %r{}, etc.
-       t)
+       (if region-beginning
+           (forward-char 1)))
       (ruby-electric-newline-before-closing-bracket
-       (insert " ")
-       (save-excursion
-         (newline)
-         (ruby-indent-line t)))
+       (cond (region-beginning
+              (save-excursion
+                (goto-char region-beginning)
+                (newline))
+              (newline)
+              (forward-char 1)
+              (indent-region region-beginning (line-end-position)))
+             (t
+              (insert " ")
+              (save-excursion
+                (newline)
+                (ruby-indent-line t)))))
       (t
-       (insert "  ")
-       (backward-char 1))))
+       (if region-beginning
+           (save-excursion
+             (goto-char region-beginning)
+             (insert " "))
+         (insert " "))
+       (insert " ")
+       (and region-beginning
+            (forward-char 1)))))
     ((ruby-electric-string-at-point-p)
-     (save-excursion
-       (backward-char 1)
+     (let ((start-position (1- (or region-beginning (point)))))
        (cond
-        ((char-equal ?\# (preceding-char))
+        ((char-equal ?\# (char-before start-position))
          (unless (save-excursion
-                   (backward-char 1)
+                   (goto-char (1- start-position))
                    (ruby-electric-escaped-p))
-           (forward-char 1)
-           (insert "}")))
+           (insert "}")
+           (or region-beginning
+               (backward-char 1))))
         ((or
           (ruby-electric-command-char-expandable-punct-p ?\#)
-          (ruby-electric-escaped-p))
+          (save-excursion
+            (goto-char start-position)
+            (ruby-electric-escaped-p)))
+         (if region-beginning
+             (goto-char region-beginning))
          (setq this-command 'self-insert-command))
         (t
-         (insert "#")
-         (forward-char 1)
-         (insert "}")))))
+         (save-excursion
+           (goto-char start-position)
+           (insert "#"))
+         (insert "}")
+         (or region-beginning
+             (backward-char 1))))))
     (t
+     (if region-beginning
+         (goto-char region-beginning))
      (setq this-command 'self-insert-command)))))
 
-(defun ruby-electric-hash(arg)
+(defun ruby-electric-hash (arg)
   (interactive "*P")
   (ruby-electric-insert
    arg
    (and (ruby-electric-string-at-point-p)
-        (or (char-equal (following-char) ?') ;; likely to be in ''
+        (let ((start-position (1- (or region-beginning (point)))))
+          (cond
+           ((char-equal (following-char) ?')) ;; likely to be in ''
+           ((save-excursion
+              (goto-char start-position)
+              (ruby-electric-escaped-p)))
+           (region-beginning
             (save-excursion
-              (backward-char 1)
-              (ruby-electric-escaped-p))
-            (progn
-              (insert "{}")
-              (backward-char 1))))))
+              (goto-char (1+ start-position))
+              (insert "{"))
+            (insert "}"))
+           (t
+            (insert "{")
+            (save-excursion
+              (insert "}"))))))))
 
 (defmacro ruby-electric-avoid-eob(&rest body)
   `(if (eobp)
@@ -423,7 +470,8 @@ enabled."
     (insert (make-string (prefix-numeric-value arg) last-command-event)))
    ((and
      (eq last-command 'ruby-electric-curlies)
-     (= last-command-event ?})) ;; {}
+     (= last-command-event ?})
+     (not (char-equal (preceding-char) last-command-event))) ;; {}
     (if (char-equal (following-char) ?\n) (delete-char 1))
     (delete-horizontal-space)
     (forward-char))
