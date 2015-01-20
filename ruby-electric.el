@@ -247,8 +247,11 @@ enabled."
   (interactive "*P")
   (and (boundp 'sp-last-operation)
        (setq sp-delayed-pair nil))
-  (cond (arg
-         (insert (make-string (prefix-numeric-value arg) last-command-event)))
+  (cond ((or arg
+             (region-active-p))
+         (or (= last-command-event ?\s)
+             (setq last-command-event ?\n))
+         (ruby-electric-replace-region-or-insert))
         ((ruby-electric-space/return-can-be-expanded-p)
          (let (action)
            (save-excursion
@@ -310,17 +313,17 @@ enabled."
   (and (ruby-electric-code-at-point-p)
        (looking-back ruby-electric-expandable-keyword-re)))
 
-(defun ruby-electric-cua-replace-region-maybe()
-  (let ((func (key-binding [remap self-insert-command])))
-    (when (memq func '(cua-replace-region
-                       sp--cua-replace-region))
-      (setq this-original-command 'self-insert-command)
-      (funcall (setq this-command func))
-      t)))
+(defun ruby-electric-replace-region-or-insert ()
+  (and (region-active-p)
+       (bound-and-true-p delete-selection-mode)
+       (fboundp 'delete-selection-helper)
+       (delete-selection-helper (get 'self-insert-command 'delete-selection)))
+  (insert (make-string (prefix-numeric-value current-prefix-arg)
+                       last-command-event))
+  (setq this-command 'self-insert-command))
 
 (defmacro ruby-electric-insert (arg &rest body)
-  `(cond ((ruby-electric-cua-replace-region-maybe))
-         ((and
+  `(cond ((and
            (null ,arg)
            (ruby-electric-command-char-expandable-punct-p last-command-event))
           (let ((region-beginning
@@ -340,9 +343,7 @@ enabled."
                  ;; region beginning.
                  (eq this-command 'self-insert-command)
                  (goto-char region-beginning))))
-         (t
-          (setq this-command 'self-insert-command)
-          (insert (make-string (prefix-numeric-value ,arg) last-command-event)))))
+         ((ruby-electric-replace-region-or-insert))))
 
 (defun ruby-electric-curlies (arg)
   (interactive "*P")
@@ -405,30 +406,31 @@ enabled."
          (or region-beginning
              (backward-char 1))))))
     (t
-     (if region-beginning
-         (goto-char region-beginning))
-     (setq this-command 'self-insert-command)))))
+     (delete-char -1)
+     (ruby-electric-replace-region-or-insert)))))
 
 (defun ruby-electric-hash (arg)
   (interactive "*P")
   (ruby-electric-insert
    arg
-   (and (ruby-electric-string-at-point-p)
-        (let ((start-position (1- (or region-beginning (point)))))
-          (cond
-           ((char-equal (following-char) ?')) ;; likely to be in ''
-           ((save-excursion
-              (goto-char start-position)
-              (ruby-electric-escaped-p)))
-           (region-beginning
-            (save-excursion
-              (goto-char (1+ start-position))
-              (insert "{"))
-            (insert "}"))
-           (t
-            (insert "{")
-            (save-excursion
-              (insert "}"))))))))
+   (if (ruby-electric-string-at-point-p)
+       (let ((start-position (1- (or region-beginning (point)))))
+         (cond
+          ((char-equal (following-char) ?')) ;; likely to be in ''
+          ((save-excursion
+             (goto-char start-position)
+             (ruby-electric-escaped-p)))
+          (region-beginning
+           (save-excursion
+             (goto-char (1+ start-position))
+             (insert "{"))
+           (insert "}"))
+          (t
+           (insert "{")
+           (save-excursion
+             (insert "}")))))
+     (delete-char -1)
+     (ruby-electric-replace-region-or-insert))))
 
 (defun ruby-electric-matching-char (arg)
   (interactive "*P")
@@ -486,10 +488,8 @@ enabled."
 (defun ruby-electric-closing-char(arg)
   (interactive "*P")
   (cond
-   ((ruby-electric-cua-replace-region-maybe))
    (arg
-    (setq this-command 'self-insert-command)
-    (insert (make-string (prefix-numeric-value arg) last-command-event)))
+    (ruby-electric-replace-region-or-insert))
    ((and
      (eq last-command 'ruby-electric-curlies)
      (= last-command-event ?})
@@ -504,8 +504,7 @@ enabled."
                           ruby-electric-closing-char))) ;; ()/[] and (())/[[]]
     (forward-char))
    (t
-    (setq this-command 'self-insert-command)
-    (self-insert-command 1)
+    (ruby-electric-replace-region-or-insert)
     (if ruby-electric-autoindent-on-closing-char
         (ruby-indent-line)))))
 
@@ -517,7 +516,8 @@ enabled."
                (looking-back ruby-electric-expandable-bar-re))
           (save-excursion (insert "|")))
          (t
-          (setq this-command 'self-insert-command)))))
+          (delete-char -1)
+          (ruby-electric-replace-region-or-insert)))))
 
 (defun ruby-electric-delete-backward-char(arg)
   (interactive "*p")
