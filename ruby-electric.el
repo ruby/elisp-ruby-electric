@@ -430,36 +430,58 @@ enabled."
             (save-excursion
               (insert "}"))))))))
 
-(defmacro ruby-electric-avoid-eob(&rest body)
-  `(if (eobp)
-       (save-excursion
-         (insert "\n")
-         (backward-char)
-         ,@body
-         (prog1
-             (ruby-electric-string-at-point-p)
-           (delete-char 1)))
-     ,@body))
-
-(defun ruby-electric-matching-char(arg)
+(defun ruby-electric-matching-char (arg)
   (interactive "*P")
   (ruby-electric-insert
    arg
    (let ((closing (cdr (assoc last-command-event
                               ruby-electric-matching-delimeter-alist))))
      (cond
+      ;; quotes
       ((char-equal closing last-command-event)
-       (if (and (not (ruby-electric-string-at-point-p))
-                (ruby-electric-avoid-eob
-                 (redisplay)
-                 (ruby-electric-string-at-point-p)))
-           (save-excursion (insert closing))
-         (and (eq last-command 'ruby-electric-matching-char)
-              (char-equal (following-char) closing) ;; repeated quotes
-              (delete-forward-char 1))
-         (setq this-command 'self-insert-command)))
+       (cond ((let ((start-position (or region-beginning (point))))
+                ;; check if this quote has just started a string
+                (and
+                 (unwind-protect
+                     (save-excursion
+                       (subst-char-in-region (1- start-position) start-position
+                                             last-command-event ?\s)
+                       (goto-char (1- start-position))
+                       (save-excursion
+                         (font-lock-fontify-region (line-beginning-position) (1+ (point))))
+                       (not (ruby-electric-string-at-point-p)))
+                     (subst-char-in-region (1- start-position) start-position
+                                           ?\s last-command-event))
+                 (save-excursion
+                   (goto-char (1- start-position))
+                   (save-excursion
+                     (font-lock-fontify-region (line-beginning-position) (1+ (point))))
+                   (ruby-electric-string-at-point-p))))
+              (if region-beginning
+                  ;; escape quotes of the same kind, backslash and hash
+                  (let ((re (format "[%c\\%s]"
+                                    last-command-event
+                                    (if (char-equal last-command-event ?\")
+                                        "#" "")))
+                        (bound (point)))
+                    (save-excursion
+                      (goto-char region-beginning)
+                      (while (re-search-forward re bound t)
+                        (let ((end (point)))
+                          (replace-match "\\\\\\&")
+                          (setq bound (+ bound (- (point) end))))))))
+              (insert closing)
+              (or region-beginning
+                  (backward-char 1)))
+             (t
+              (and (eq last-command 'ruby-electric-matching-char)
+                   (char-equal (following-char) closing) ;; repeated quotes
+                   (delete-char 1))
+              (setq this-command 'self-insert-command))))
       ((ruby-electric-code-at-point-p)
-       (save-excursion (insert closing)))))))
+       (insert closing)
+       (or region-beginning
+           (backward-char 1)))))))
 
 (defun ruby-electric-closing-char(arg)
   (interactive "*P")
@@ -477,6 +499,7 @@ enabled."
     (forward-char))
    ((and
      (= last-command-event (following-char))
+     (not (char-equal (preceding-char) last-command-event))
      (memq last-command '(ruby-electric-matching-char
                           ruby-electric-closing-char))) ;; ()/[] and (())/[[]]
     (forward-char))
