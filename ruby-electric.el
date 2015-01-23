@@ -542,6 +542,8 @@ enabled."
               (delete-char 1))))
   (delete-char (- arg)))
 
+(put 'ruby-electric-delete-backward-char 'delete-selection 'supersede)
+
 (provide 'ruby-electric)
 
 ;;; ruby-electric.el ends here
