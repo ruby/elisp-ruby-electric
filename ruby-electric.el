@@ -269,7 +269,7 @@ enabled."
                   (ruby-indent-line)
                   (save-excursion
                     (newline)
-                    (ruby-insert-end)))
+                    (ruby-electric-end)))
                  ((eq action 'reindent)
                   (ruby-indent-line)))
            (ruby-electric-space/return-fallback)))
@@ -538,6 +538,16 @@ enabled."
   (delete-char (- arg)))
 
 (put 'ruby-electric-delete-backward-char 'delete-selection 'supersede)
+
+(defun ruby-electric-end ()
+  (interactive)
+  (if (eq (char-syntax (preceding-char)) ?w)
+      (insert " "))
+  (insert "end")
+  (save-excursion
+    (if (eq (char-syntax (following-char)) ?w)
+        (insert " "))
+    (ruby-indent-line t)))
 
 (provide 'ruby-electric)
 
