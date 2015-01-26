@@ -161,11 +161,6 @@ cons, ACTION can be set to one of the following values:
                          "$"))))
   :group 'ruby-electric)
 
-(defcustom ruby-electric-simple-keywords-re nil
-  "Obsolete and ignored.  Customize `ruby-electric-keywords-alist'
-instead."
-  :type 'regexp :group 'ruby-electric)
-
 (defvar ruby-electric-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map " " 'ruby-electric-space/return)
