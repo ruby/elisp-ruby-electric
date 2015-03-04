@@ -69,9 +69,7 @@
                   (insert ,string)
                   (point))))
      (unwind-protect
-         (progn
-           (font-lock-fontify-region before after)
-           ,@body)
+         (progn ,@body)
        (delete-region before after)
        (goto-char before))))
 
@@ -281,23 +279,15 @@ enabled."
         (t
          (ruby-electric-space/return-fallback))))
 
-(defun ruby-electric-code-at-point-p (&optional no-fontify)
+(defun ruby-electric-code-at-point-p()
   (and ruby-electric-mode
-       (let* ((properties
-               (if no-fontify
-                   (text-properties-at (point))
-                 (ruby-electric--try-insert-and-do " "
-                   (text-properties-at (point))))))
+       (let* ((properties (text-properties-at (point))))
          (and (null (memq 'font-lock-string-face properties))
               (null (memq 'font-lock-comment-face properties))))))
 
-(defun ruby-electric-string-at-point-p (&optional no-fontify)
+(defun ruby-electric-string-at-point-p()
   (and ruby-electric-mode
-       (consp (memq 'font-lock-string-face
-                    (if no-fontify
-                        (text-properties-at (point))
-                      (ruby-electric--try-insert-and-do " "
-                        (text-properties-at (point))))))))
+       (consp (memq 'font-lock-string-face (text-properties-at (point))))))
 
 (defun ruby-electric-comment-at-point-p()
   (and ruby-electric-mode
@@ -457,14 +447,14 @@ enabled."
                        (goto-char (1- start-position))
                        (save-excursion
                          (font-lock-fontify-region (line-beginning-position) (1+ (point))))
-                       (not (ruby-electric-string-at-point-p t)))
+                       (not (ruby-electric-string-at-point-p)))
                      (subst-char-in-region (1- start-position) start-position
                                            ?\s last-command-event))
                  (save-excursion
                    (goto-char (1- start-position))
                    (save-excursion
                      (font-lock-fontify-region (line-beginning-position) (1+ (point))))
-                   (ruby-electric-string-at-point-p t))))
+                   (ruby-electric-string-at-point-p))))
               (if region-beginning
                   ;; escape quotes of the same kind, backslash and hash
                   (let ((re (format "[%c\\%s]"
