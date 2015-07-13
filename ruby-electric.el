@@ -389,6 +389,7 @@ enabled."
              (insert " "))
          (insert " "))
        (insert " ")
+       (backward-char 1)
        (and region-beginning
             (forward-char 1)))))
     ((ruby-electric-string-at-point-p)
