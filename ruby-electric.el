@@ -464,8 +464,8 @@ enabled."
                        (save-excursion
                          (font-lock-fontify-region (line-beginning-position) (1+ (point))))
                        (not (ruby-electric-string-at-point-p)))
-                     (subst-char-in-region (1- start-position) start-position
-                                           ?\s last-command-event))
+                   (subst-char-in-region (1- start-position) start-position
+                                         ?\s last-command-event))
                  (save-excursion
                    (goto-char (1- start-position))
                    (save-excursion
