@@ -355,11 +355,6 @@ enabled."
                        last-command-event))
   (setq this-command 'self-insert-command))
 
-(defun ruby-electric--fontify-region (beg end)
-  (if (eq major-mode 'enh-ruby-mode)
-      (enh-ruby-fontify-buffer)
-    (font-lock-fontify-region beg end)))
-
 (defmacro ruby-electric-insert (arg &rest body)
   `(cond ((and
            (null ,arg)
@@ -390,12 +385,17 @@ enabled."
   (ruby-electric-insert
    arg
    (cond
-    ((ruby-electric-code-at-point-p)
+    ((or (ruby-electric-code-at-point-p)
+         (ruby-electric--faces-include-p
+          faces-at-point
+          'enh-ruby-string-delimiter-face
+          'enh-ruby-regexp-delimiter-face))
      (save-excursion
        (insert "}")
-       (ruby-electric--fontify-region (line-beginning-position) (point)))
+       (font-lock-fontify-region (line-beginning-position) (point)))
      (cond
-      ((ruby-electric-string-at-point-p) ;; %w{}, %r{}, etc.
+      ((or (ruby-electric-string-at-point-p)  ;; %w{}, %r{}, etc.
+           (looking-back "%[QqWwRrxIis]{"))
        (if region-beginning
            (forward-char 1)))
       (ruby-electric-newline-before-closing-bracket
@@ -482,24 +482,7 @@ enabled."
      (cond
       ;; quotes
       ((char-equal closing last-command-event)
-       (cond ((let ((start-position (or region-beginning (point))))
-                ;; check if this quote has just started a string
-                (and
-                 (unwind-protect
-                     (save-excursion
-                       (subst-char-in-region (1- start-position) start-position
-                                             last-command-event ?\s)
-                       (goto-char (1- start-position))
-                       (save-excursion
-                         (ruby-electric--fontify-region (line-beginning-position) (1+ (point))))
-                       (not (ruby-electric-string-at-point-p)))
-                   (subst-char-in-region (1- start-position) start-position
-                                         ?\s last-command-event))
-                 (save-excursion
-                   (goto-char (1- start-position))
-                   (save-excursion
-                     (ruby-electric--fontify-region (line-beginning-position) (1+ (point))))
-                   (ruby-electric-string-at-point-p))))
+       (cond ((not (ruby-electric-string-face-p faces-at-point))
               (if region-beginning
                   ;; escape quotes of the same kind, backslash and hash
                   (let ((re (format "[%c\\%s]"
