@@ -289,14 +289,19 @@ enabled."
                  (get-text-property point 'face))))
     (if (listp value) value (list value))))
 
-(defun ruby-electric--faces-at-point-include-p (&rest faces)
+(defun ruby-electric--faces-include-p (pfaces &rest faces)
   (and ruby-electric-mode
        (loop for face in faces
-             with pfaces = (ruby-electric--get-faces-at-point)
              thereis (memq face pfaces))))
 
-(defun ruby-electric-code-at-point-p()
-  (not (ruby-electric--faces-at-point-include-p
+(defun ruby-electric--faces-at-point-include-p (&rest faces)
+  (apply 'ruby-electric--faces-include-p
+         (ruby-electric--get-faces-at-point)
+         faces))
+
+(defun ruby-electric-code-face-p (faces)
+  (not (ruby-electric--faces-include-p
+        faces
         'font-lock-string-face
         'font-lock-comment-face
         'enh-ruby-string-delimiter-face
@@ -304,12 +309,24 @@ enabled."
         'enh-ruby-regexp-delimiter-face
         'enh-ruby-regexp-face)))
 
-(defun ruby-electric-string-at-point-p()
-  (ruby-electric--faces-at-point-include-p
-   'font-lock-string-face
-   'enh-ruby-string-delimiter-face))
+(defun ruby-electric-code-at-point-p ()
+  (ruby-electric-code-face-p
+   (ruby-electric--get-faces-at-point)))
 
-(defun ruby-electric-comment-at-point-p()
+(defun ruby-electric-string-face-p (faces)
+  (ruby-electric--faces-include-p
+   faces
+   'font-lock-string-face
+   'enh-ruby-string-delimiter-face
+   'enh-ruby-heredoc-delimiter-face
+   'enh-ruby-regexp-delimiter-face
+   'enh-ruby-regexp-face))
+
+(defun ruby-electric-string-at-point-p ()
+  (ruby-electric-string-face-p
+   (ruby-electric--get-faces-at-point)))
+
+(defun ruby-electric-comment-at-point-p ()
   (ruby-electric--faces-at-point-include-p
    'font-lock-comment-face))
 
@@ -340,9 +357,7 @@ enabled."
 
 (defun ruby-electric--fontify-region (beg end)
   (if (eq major-mode 'enh-ruby-mode)
-      ;; enh-ruby-fontify-buffer causes error in erm-req-parse and
-      ;; font-lock-fontify-region does not take effect.
-      (sit-for 0.03)
+      (enh-ruby-fontify-buffer)
     (font-lock-fontify-region beg end)))
 
 (defmacro ruby-electric-insert (arg &rest body)
