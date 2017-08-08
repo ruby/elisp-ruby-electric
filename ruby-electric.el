@@ -374,7 +374,9 @@ enabled."
                           (goto-char (region-end))))
                        (t
                         (insert last-command-event)
-                        nil))))
+                        nil)))
+                (faces-at-point
+                 (ruby-electric--get-faces-at-point)))
             ,@body
             (and region-beginning
                  ;; If no extra character is inserted, go back to the
