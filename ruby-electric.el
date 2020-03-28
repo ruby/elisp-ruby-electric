@@ -10,7 +10,7 @@
 ;; URL: https://github.com/ruby/elisp-ruby-electric
 ;; Keywords: languages ruby
 ;; License: The same license terms as Ruby
-;; Version: 2.3.2
+;; Version: 2.3.3
 
 ;;; Commentary:
 ;;
