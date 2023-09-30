@@ -251,12 +251,16 @@ enabled."
 
 (defun ruby-electric-indent-line (&optional ignored)
   (if (eq major-mode 'enh-ruby-mode)
-      (enh-ruby-indent-line ignored)
+      (progn
+	(declare-function enh-ruby-indent-line 'enh-ruby-mode)
+	(enh-ruby-indent-line ignored))
     (ruby-indent-line ignored)))
 
 (defun ruby-electric-calculate-indent (&optional start-point)
   (if (eq major-mode 'enh-ruby-mode)
-      (enh-ruby-calculate-indent start-point)
+      (progn
+	(declare-function enh-ruby-calculate-indent 'enh-ruby-mode)
+	(enh-ruby-calculate-indent start-point))
     (ruby-calculate-indent start-point)))
 
 (defun ruby-electric-space/return (arg)
