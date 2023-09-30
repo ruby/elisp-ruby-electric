@@ -39,7 +39,7 @@
 (require 'ruby-mode)
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 (defgroup ruby-electric nil
   "Minor mode providing electric editing commands for ruby files"
@@ -308,8 +308,8 @@ enabled."
 
 (defun ruby-electric--faces-include-p (pfaces &rest faces)
   (and ruby-electric-mode
-       (loop for face in faces
-             thereis (memq face pfaces))))
+       (cl-loop for face in faces
+		thereis (memq face pfaces))))
 
 (defun ruby-electric--faces-at-point-include-p (&rest faces)
   (apply 'ruby-electric--faces-include-p
