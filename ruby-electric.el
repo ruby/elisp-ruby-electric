@@ -86,7 +86,7 @@
 
 (defun ruby-electric--modifier-keyword-at-point-p ()
   "Test if there is a modifier keyword at point."
-  (and (not (looking-back "\\."))
+  (and (not (looking-back "\\." nil))
        (looking-at ruby-modifier-beg-symbol-re)
        (let ((end (match-end 1)))
          (save-excursion
@@ -105,7 +105,7 @@
 (defun ruby-electric--block-mid-keyword-at-point-p ()
   "Test if there is a block mid keyword at point."
   (and (looking-at ruby-block-mid-symbol-re)
-       (looking-back "^\\s-*")))
+       (looking-back "^\\s-*" nil)))
 
 (defconst ruby-block-beg-symbol-re
   (regexp-opt ruby-block-beg-keywords 'symbols))
@@ -114,8 +114,8 @@
   "Test if there is a block beginning keyword at point."
   (and (looking-at ruby-block-beg-symbol-re)
        (if (string= (match-string 1) "do")
-           (looking-back "\\s-")
-         (not (looking-back "\\.")))
+           (looking-back "\\s-" nil)
+         (not (looking-back "\\." nil)))
        ;; (not (ruby-electric--modifier-keyword-at-point-p)) ;; implicit assumption
        ))
 
@@ -361,7 +361,7 @@ enabled."
 
 (defun ruby-electric-space/return-can-be-expanded-p()
   (and (ruby-electric-code-at-point-p)
-       (looking-back ruby-electric-expandable-keyword-re)))
+       (looking-back ruby-electric-expandable-keyword-re nil)))
 
 (defun ruby-electric-replace-region-or-insert ()
   (and (region-active-p)
@@ -412,7 +412,7 @@ enabled."
        (font-lock-fontify-region (line-beginning-position) (point)))
      (cond
       ((or (ruby-electric-string-at-point-p)  ;; %w{}, %r{}, etc.
-           (looking-back "%[QqWwRrxIis]{"))
+           (looking-back "%[QqWwRrxIis]{" nil))
        (if region-beginning
            (forward-char 1)))
       (ruby-electric-newline-before-closing-bracket
@@ -554,7 +554,7 @@ enabled."
   (ruby-electric-insert
    arg
    (cond ((and (ruby-electric-code-at-point-p)
-               (looking-back ruby-electric-expandable-bar-re))
+               (looking-back ruby-electric-expandable-bar-re nil))
           (save-excursion (insert "|")))
          (t
           (delete-char -1)
