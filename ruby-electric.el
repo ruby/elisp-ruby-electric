@@ -42,7 +42,7 @@
   (require 'cl))
 
 (defgroup ruby-electric nil
-  "Minor mode providing electric editing commands for ruby files"
+  "Minor mode providing electric editing commands for ruby files."
   :group 'ruby)
 
 (defconst ruby-electric-expandable-bar-re
@@ -188,11 +188,11 @@ cons, ACTION can be set to one of the following values:
         (if closing
             (define-key map (char-to-string closing) 'ruby-electric-closing-char))))
     map)
-  "Keymap used in ruby-electric-mode")
+  "Keymap used in ruby-electric-mode.")
 
 (defcustom ruby-electric-expand-delimiters-list '(all)
   "*List of contexts where matching delimiter should be inserted.
-The word 'all' will do all insertions."
+The word `all' will do all insertions."
   :type `(set :extra-offset 8
               (const :tag "Everything" all)
               ,@(apply 'list
@@ -222,12 +222,12 @@ With no argument, this command toggles the mode.  Non-null prefix
 argument turns on the mode.  Null prefix argument turns off the
 mode.
 
-When Ruby Electric mode is enabled, an indented 'end' is
-heuristicaly inserted whenever typing a word like 'module',
-'class', 'def', 'if', 'unless', 'case', 'until', 'for', 'begin',
-'do' followed by a space.  Single, double and back quotes as well
+When Ruby Electric mode is enabled, an indented `end' is
+heuristicaly inserted whenever typing a word like `module',
+`class', `def', `if', `unless', `case', `until', `for', `begin',
+`do' followed by a space.  Single, double and back quotes as well
 as braces are paired auto-magically.  Expansion does not occur
-inside comments and strings. Note that you must have Font Lock
+inside comments and strings.  Note that you must have Font Lock
 enabled."
   ;; initial value.
   nil
