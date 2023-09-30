@@ -261,6 +261,7 @@ enabled."
 
 (defun ruby-electric-space/return (arg)
   (interactive "*P")
+  (defvar sp-delayed-pair) ;defined in smartparens.el
   (and (boundp 'sp-last-operation)
        (setq sp-delayed-pair nil))
   (cond ((or arg
