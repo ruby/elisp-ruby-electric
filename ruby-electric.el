@@ -42,7 +42,7 @@
   (require 'cl-lib))
 
 (defgroup ruby-electric nil
-  "Minor mode providing electric editing commands for ruby files"
+  "Minor mode providing electric editing commands for ruby files."
   :group 'ruby)
 
 (defconst ruby-electric-expandable-bar-re
@@ -86,7 +86,7 @@
 
 (defun ruby-electric--modifier-keyword-at-point-p ()
   "Test if there is a modifier keyword at point."
-  (and (not (looking-back "\\."))
+  (and (not (looking-back "\\." nil))
        (looking-at ruby-modifier-beg-symbol-re)
        (let ((end (match-end 1)))
          (save-excursion
@@ -105,7 +105,7 @@
 (defun ruby-electric--block-mid-keyword-at-point-p ()
   "Test if there is a block mid keyword at point."
   (and (looking-at ruby-block-mid-symbol-re)
-       (looking-back "^\\s-*")))
+       (looking-back "^\\s-*" nil)))
 
 (defconst ruby-block-beg-symbol-re
   (regexp-opt ruby-block-beg-keywords 'symbols))
@@ -114,8 +114,8 @@
   "Test if there is a block beginning keyword at point."
   (and (looking-at ruby-block-beg-symbol-re)
        (if (string= (match-string 1) "do")
-           (looking-back "\\s-")
-         (not (looking-back "\\.")))
+           (looking-back "\\s-" nil)
+         (not (looking-back "\\." nil)))
        ;; (not (ruby-electric--modifier-keyword-at-point-p)) ;; implicit assumption
        ))
 
@@ -188,11 +188,11 @@ cons, ACTION can be set to one of the following values:
         (if closing
             (define-key map (char-to-string closing) 'ruby-electric-closing-char))))
     map)
-  "Keymap used in ruby-electric-mode")
+  "Keymap used in ruby-electric-mode.")
 
 (defcustom ruby-electric-expand-delimiters-list '(all)
   "*List of contexts where matching delimiter should be inserted.
-The word 'all' will do all insertions."
+The word `all' will do all insertions."
   :type `(set :extra-offset 8
               (const :tag "Everything" all)
               ,@(apply 'list
@@ -222,12 +222,12 @@ With no argument, this command toggles the mode.  Non-null prefix
 argument turns on the mode.  Null prefix argument turns off the
 mode.
 
-When Ruby Electric mode is enabled, an indented 'end' is
-heuristicaly inserted whenever typing a word like 'module',
-'class', 'def', 'if', 'unless', 'case', 'until', 'for', 'begin',
-'do' followed by a space.  Single, double and back quotes as well
+When Ruby Electric mode is enabled, an indented `end' is
+heuristicaly inserted whenever typing a word like `module',
+`class', `def', `if', `unless', `case', `until', `for', `begin',
+`do' followed by a space.  Single, double and back quotes as well
 as braces are paired auto-magically.  Expansion does not occur
-inside comments and strings. Note that you must have Font Lock
+inside comments and strings.  Note that you must have Font Lock
 enabled."
   ;; initial value.
   nil
@@ -251,16 +251,21 @@ enabled."
 
 (defun ruby-electric-indent-line (&optional ignored)
   (if (eq major-mode 'enh-ruby-mode)
-      (enh-ruby-indent-line ignored)
+      (progn
+	(declare-function enh-ruby-indent-line 'enh-ruby-mode)
+	(enh-ruby-indent-line ignored))
     (ruby-indent-line ignored)))
 
 (defun ruby-electric-calculate-indent (&optional start-point)
   (if (eq major-mode 'enh-ruby-mode)
-      (enh-ruby-calculate-indent start-point)
+      (progn
+	(declare-function enh-ruby-calculate-indent 'enh-ruby-mode)
+	(enh-ruby-calculate-indent start-point))
     (ruby-calculate-indent start-point)))
 
 (defun ruby-electric-space/return (arg)
   (interactive "*P")
+  (defvar sp-delayed-pair) ;defined in smartparens.el
   (and (boundp 'sp-last-operation)
        (setq sp-delayed-pair nil))
   (cond ((or arg
@@ -361,7 +366,7 @@ enabled."
 
 (defun ruby-electric-space/return-can-be-expanded-p()
   (and (ruby-electric-code-at-point-p)
-       (looking-back ruby-electric-expandable-keyword-re)))
+       (looking-back ruby-electric-expandable-keyword-re nil)))
 
 (defun ruby-electric-replace-region-or-insert ()
   (and (region-active-p)
@@ -412,7 +417,7 @@ enabled."
        (font-lock-fontify-region (line-beginning-position) (point)))
      (cond
       ((or (ruby-electric-string-at-point-p)  ;; %w{}, %r{}, etc.
-           (looking-back "%[QqWwRrxIis]{"))
+           (looking-back "%[QqWwRrxIis]{" nil))
        (if region-beginning
            (forward-char 1)))
       (ruby-electric-newline-before-closing-bracket
@@ -554,7 +559,7 @@ enabled."
   (ruby-electric-insert
    arg
    (cond ((and (ruby-electric-code-at-point-p)
-               (looking-back ruby-electric-expandable-bar-re))
+               (looking-back ruby-electric-expandable-bar-re nil))
           (save-excursion (insert "|")))
          (t
           (delete-char -1)
