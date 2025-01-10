@@ -229,12 +229,9 @@ heuristicaly inserted whenever typing a word like `module',
 as braces are paired auto-magically.  Expansion does not occur
 inside comments and strings.  Note that you must have Font Lock
 enabled."
-  ;; initial value.
-  nil
-  ;;indicator for the mode line.
-  " REl"
-  ;;keymap
-  ruby-electric-mode-map
+  :init-value nil
+  :lighter " REl"
+  :keymap ruby-electric-mode-map
   (if ruby-electric-mode
       (run-hooks 'ruby-electric-mode-hook)))
 
