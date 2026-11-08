@@ -472,6 +472,7 @@ enabled."
   (interactive "*P")
   (ruby-electric-insert
    arg
+   (ignore faces-at-point)
    (if (ruby-electric-string-at-point-p)
        (let ((start-position (1- (or region-beginning (point)))))
          (cond
@@ -554,6 +555,7 @@ enabled."
   (interactive "*P")
   (ruby-electric-insert
    arg
+   (ignore faces-at-point)
    (cond ((and (ruby-electric-code-at-point-p)
                (looking-back ruby-electric-expandable-bar-re nil))
           (save-excursion (insert "|")))
