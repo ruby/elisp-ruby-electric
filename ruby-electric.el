@@ -1,4 +1,4 @@
-;;; ruby-electric.el --- Minor mode for electrically editing ruby code
+;;; ruby-electric.el --- Minor mode for electrically editing ruby code  -*- lexical-binding: t; -*-
 ;;
 ;; Authors: Dee Zsombor <dee dot zsombor at gmail dot com>
 ;;          Yukihiro Matsumoto
