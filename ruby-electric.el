@@ -181,7 +181,6 @@ cons, ACTION can be set to one of the following values:
     (dolist (x ruby-electric-delimiters-alist)
       (let* ((delim   (car x))
              (plist   (cdr x))
-             (name    (plist-get plist :name))
              (func    (plist-get plist :handler))
              (closing (plist-get plist :closing)))
         (define-key map (char-to-string delim) func)
