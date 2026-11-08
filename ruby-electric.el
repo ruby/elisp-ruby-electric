@@ -1,4 +1,4 @@
-;;; ruby-electric.el --- Minor mode for electrically editing ruby code
+;;; ruby-electric.el --- Minor mode for electrically editing ruby code  -*- lexical-binding: t; -*-
 ;;
 ;; Authors: Dee Zsombor <dee dot zsombor at gmail dot com>
 ;;          Yukihiro Matsumoto
@@ -181,7 +181,6 @@ cons, ACTION can be set to one of the following values:
     (dolist (x ruby-electric-delimiters-alist)
       (let* ((delim   (car x))
              (plist   (cdr x))
-             (name    (plist-get plist :name))
              (func    (plist-get plist :handler))
              (closing (plist-get plist :closing)))
         (define-key map (char-to-string delim) func)
@@ -473,6 +472,7 @@ enabled."
   (interactive "*P")
   (ruby-electric-insert
    arg
+   (ignore faces-at-point)
    (if (ruby-electric-string-at-point-p)
        (let ((start-position (1- (or region-beginning (point)))))
          (cond
@@ -555,6 +555,7 @@ enabled."
   (interactive "*P")
   (ruby-electric-insert
    arg
+   (ignore faces-at-point)
    (cond ((and (ruby-electric-code-at-point-p)
                (looking-back ruby-electric-expandable-bar-re nil))
           (save-excursion (insert "|")))
